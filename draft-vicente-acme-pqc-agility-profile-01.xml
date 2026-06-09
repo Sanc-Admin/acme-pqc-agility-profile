@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rfc [
+  <!ENTITY nbsp "&#160;">
+]>
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude"
+     category="info"
+     docName="draft-vicente-acme-pqc-agility-profile-01"
+     ipr="trust200902"
+     submissionType="independent"
+     xml:lang="en"
+     version="3">
+
+  <front>
+    <title abbrev="ACME PQC Agility Profile">Post-Quantum Cryptographic Agility Profile for ACME</title>
+
+    <seriesInfo name="Internet-Draft" value="draft-vicente-acme-pqc-agility-profile-01"/>
+
+    <author initials="B." surname="Vicente" fullname="Brian Vicente">
+      <organization>Sanctum SecOps LLC</organization>
+      <address>
+        <postal>
+          <city>Pine City</city>
+          <region>NY</region>
+          <country>United States of America</country>
+        </postal>
+        <email>bvicente@sanctumsecops.com</email>
+        <uri>https://orcid.org/0009-0006-6395-5308</uri>
+      </address>
+    </author>
+
+    <date year="2026" month="June" day="9"/>
+
+    <area>Security</area>
+    <workgroup>Automated Certificate Management Environment</workgroup>
+
+    <keyword>post-quantum cryptography</keyword>
+    <keyword>PQC</keyword>
+    <keyword>ACME</keyword>
+    <keyword>agility profile</keyword>
+    <keyword>hybrid certificate</keyword>
+    <keyword>rotation epoch</keyword>
+    <keyword>tenant isolation</keyword>
+    <keyword>composite chain policy</keyword>
+    <keyword>posture scoring</keyword>
+    <keyword>Sanctum SecOps</keyword>
+
+    <abstract>
+      <t>
+        This document defines a Post-Quantum Cryptographic (PQC) Agility Profile extension
+        for the Automated Certificate Management Environment (ACME) [RFC8555]. The extension
+        introduces a typed pqcAgility object that an ACME server includes in its
+        directory metadata and that an ACME client may embed in an order object to express
+        per-order PQC policy. The object carries: a ranked list of PQC algorithm preferences;
+        a hybrid_required enforcement bit; a rotation_epoch_id binding
+        certificates to a coordinated migration epoch; an optional
+        composite_chain_policy identifier governing composite-signature chain
+        construction; and an optional pqc_posture_score reflecting the requestor's
+        cryptographic-readiness assessment.
+      </t>
+      <t>
+        This document defines the semantic content of a named PQC profile and is intended
+        to complement the generic ACME Profiles Extension
+        [I-D.ietf-acme-profiles], which specifies the profile-selection mechanism
+        (an opaque profile name string in the order object) but does not define the
+        PQC-specific fields that give that selection cryptographic meaning.
+        It does not modify the core ACME state machine or account management flows
+        defined in RFC 8555.
+      </t>
+      <t>
+        Multi-tenant ACME deployments MUST enforce tenant isolation of
+        pqcAgility directives. Concrete isolation parameters are
+        deployment-specific and are intentionally out of scope.
+      </t>
+    </abstract>
+
+    <note title="Relationship to Other Documents" removeInRFC="true">
+      <t>
+        This document is distinct from and does not conflict with
+        draft-giron-acme-pqcnegotiation (expired 2024-08-19, individual submission),
+        which defines a pre-account /cert-algorithms discovery endpoint and
+        KEMTLS certificate issuance modes. That document addresses algorithm
+        capability advertisement before account creation. This document addresses
+        per-order PQC enforcement policy, hybrid mandates, rotation epoch binding,
+        composite chain governance, posture scoring, and tenant isolation.
+      </t>
+      <t>
+        This document is also distinct from the ACME Profiles Extension
+        [I-D.ietf-acme-profiles], which defines a generic, algorithm-agnostic
+        profile selection string mechanism. This document defines the typed PQC
+        semantic fields that populate a PQC-named profile within that framework.
+        The two documents are complementary: an ACME server MAY expose a profile
+        named (for example) "pqc-hybrid-ml-dsa-65" whose content and enforcement
+        semantics are defined by this document, while the selection mechanism is
+        provided by [I-D.ietf-acme-profiles].
+      </t>
+    </note>
+
+    <note title="Source and Archival" removeInRFC="true">
+      <t>
+        Source for this draft is maintained at
+        <eref target="https://github.com/Sanc-Admin/acme-pqc-agility-profile">https://github.com/Sanc-Admin/acme-pqc-agility-profile</eref>.
+        A citable archival version of this document is published at Zenodo
+        upon each tagged release.
+        Author ORCID iD:
+        <eref target="https://orcid.org/0009-0006-6395-5308">https://orcid.org/0009-0006-6395-5308</eref>.
+        Author professional credentials:
+        <eref target="https://www.credly.com/users/brian-vicente">https://www.credly.com/users/brian-vicente</eref>.
+      </t>
+      <t>
+        Discussion of this document occurs on the IETF "acme" mailing list
+        (acme@ietf.org). Issues and pull requests may be filed at the GitHub
+        repository linked above.
+      </t>
+    </note>
+
+    <note title="IPR Considerations" removeInRFC="true">
+      <t>
+        The author has filed United States patent applications covering
+        subject matter relevant to this document, including
+        U.S. Provisional Patent Application No. 64/080,137
+        (filed 2026-06-01) and U.S. Patent Application No. 19/698,870
+        (filed 2026-06-05). By posting this Internet-Draft, the author
+        submits to the IETF Trust the rights described in Section 5 of
+        BCP 78 and BCP 79. Patent licensing terms are not yet known.
+        Implementers and reviewers should consult the IETF Datatracker
+        IPR disclosure page for this document for current disclosure status.
+        The Sanctum SecOps Private Enterprise Number (PEN) root used for
+        any OID allocations referenced in companion documents is
+        1.3.6.1.4.1.65953.
+      </t>
+      <t>
+        Patent-Pending Claim Scope Notice: The pending patent applications
+        referenced above cover orchestration, observability, and
+        tenant-isolation mechanisms in multi-tenant PKI systems as they
+        intersect the claims of those applications. The per-order
+        pqcAgility object structure, rotation_epoch_id
+        field semantics, hybrid_required enforcement bit, and
+        pqc_posture_score field are among the elements relevant
+        to those applications. This Internet-Draft does not grant any
+        patent license. Implementation parameters that extend beyond the
+        disclosed interface (including but not limited to scoring weights,
+        rotation triggers, tenant carve-out parameters, and adequacy
+        thresholds) are intentionally out of scope of this document.
+      </t>
+    </note>
+
+  </front>
+
+  <middle>
+
+    <section anchor="introduction">
+      <name>Introduction</name>
+      <t>
+        ACME [RFC8555] is the dominant protocol for automated certificate issuance.
+        As the Internet migrates toward post-quantum cryptography (PQC) and hybrid
+        certificate chains, ACME deployments require a structured way to express
+        per-order PQC enforcement policy beyond simple algorithm capability
+        advertisement.
+      </t>
+      <t>
+        Existing work addresses adjacent but distinct problems. The expired individual
+        submission draft-giron-acme-pqcnegotiation defines a pre-account
+        /cert-algorithms capability discovery endpoint and KEMTLS certificate
+        issuance modes, but does not define per-order policy objects, hybrid enforcement
+        mandates, rotation epoch bindings, composite chain policy, posture scoring, or
+        tenant isolation requirements. The ACME Profiles Extension
+        [I-D.ietf-acme-profiles] defines a generic, algorithm-agnostic profile
+        selection mechanism using an opaque profile name string, but does not specify
+        the PQC-semantic content those profiles carry.
+      </t>
+      <t>
+        This document fills the gap by defining the typed pqcAgility object
+        -- the PQC-semantic payload that an ACME server advertises and an ACME client
+        attaches to an order to enforce a specific cryptographic agility posture.
+      </t>
+    </section>
+
+    <section anchor="terminology">
+      <name>Terminology</name>
+      <t>
+        The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+        "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+        "OPTIONAL" in this document are to be interpreted as described in
+        BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+        capitals, as shown here.
+      </t>
+    </section>
+
+    <section anchor="pqcagility-object">
+      <name>The pqcAgility Object</name>
+
+      <section anchor="fields">
+        <name>Field Definitions</name>
+        <dl>
+          <dt>pqc_algorithm_preferences (array of string, OPTIONAL):</dt>
+          <dd>An ordered list of PQC algorithm identifiers, most preferred first.
+          The server MUST select from the intersection of advertised and requested
+          algorithms. If the intersection is empty, the server MUST reject the order
+          with an unsupportedPQCAlgorithm problem document.</dd>
+
+          <dt>hybrid_required (boolean, OPTIONAL, default false):</dt>
+          <dd>When true in directory metadata, the server REQUIRES all certificates
+          under this profile to use a hybrid composite signature. A client setting
+          this true in an order asserts a requirement for hybrid issuance; the server
+          MUST honor this or reject the order. This enforcement bit is distinct from
+          the algorithm selection mechanism in draft-giron-acme-pqcnegotiation,
+          which does not define a server-side mandatory hybrid enforcement gate.</dd>
+
+          <dt>rotation_epoch_id (string, OPTIONAL):</dt>
+          <dd>An opaque server-defined string identifying the migration epoch cohort.
+          Epoch identifiers coordinate certificate renewals across account populations
+          toward a common PQC algorithm baseline. Not defined in any prior ACME draft.</dd>
+
+          <dt>composite_chain_policy (string, OPTIONAL):</dt>
+          <dd>A server-defined identifier referencing composite-chain construction
+          rules governing which classical algorithm is paired with which PQC algorithm
+          at each chain tier. Not defined in any prior ACME draft.</dd>
+
+          <dt>pqc_posture_score (integer, OPTIONAL):</dt>
+          <dd>An integer in [0, 100] reflecting the cryptographic-readiness posture
+          of the account or deployment. A score of 100 indicates full PQC-native
+          capability. The scoring methodology is deployment-specific. Not defined
+          in any prior ACME draft.</dd>
+        </dl>
+      </section>
+
+      <section anchor="directory-advertisement">
+        <name>Directory Advertisement</name>
+        <t>
+          An ACME server compliant with this profile MUST include a pqcAgility
+          object in its directory metadata when offering PQC agility profiles.
+          Example directory metadata fragment:
+        </t>
+        <artwork><![CDATA[
+{
+  "meta": {
+    "pqcAgility": {
+      "pqc_algorithm_preferences": [
+        "id-ML-DSA-65",
+        "id-ML-DSA-44",
+        "id-SLH-DSA-SHA2-128s"
+      ],
+      "hybrid_required": true,
+      "rotation_epoch_id": "2026-Q3-hybrid-baseline",
+      "composite_chain_policy": "sanctum-pqc-cp-v1",
+      "pqc_posture_score": null
+    }
+  }
+}
+        ]]></artwork>
+      </section>
+
+      <section anchor="order-object-extensions">
+        <name>Order Object Extensions</name>
+        <t>
+          An ACME client MAY include a pqcAgility member in a new-order request.
+          Example new-order payload fragment:
+        </t>
+        <artwork><![CDATA[
+{
+  "identifiers": [
+    {"type": "dns", "value": "example.org"}
+  ],
+  "pqcAgility": {
+    "pqc_algorithm_preferences": ["id-ML-DSA-65"],
+    "hybrid_required": true,
+    "rotation_epoch_id": "2026-Q3-hybrid-baseline",
+    "composite_chain_policy": "sanctum-pqc-cp-v1",
+    "pqc_posture_score": 87
+  }
+}
+        ]]></artwork>
+      </section>
+    </section>
+
+    <section anchor="tenant-isolation">
+      <name>Tenant Isolation</name>
+      <t>
+        Multi-tenant ACME servers MUST ensure that pqcAgility directives
+        from one account do not influence issuance decisions for other accounts.
+        In particular:
+      </t>
+      <ul>
+        <li>A rotation_epoch_id submitted by one account MUST NOT alter the
+        epoch assignment of any other account.</li>
+        <li>A composite_chain_policy identifier supplied by one tenant MUST NOT
+        cause non-default chain construction policy for other tenants.</li>
+        <li>A pqc_posture_score provided by one account MUST NOT be used as
+        eligibility input for any other account.</li>
+      </ul>
+      <t>
+        Concrete tenant-isolation implementation parameters are deployment-specific
+        and are intentionally out of scope of this document.
+      </t>
+    </section>
+
+    <section anchor="relationship-to-prior-work">
+      <name>Relationship to Prior and Concurrent Work</name>
+
+      <section anchor="giron-distinction">
+        <name>Distinction from draft-giron-acme-pqcnegotiation</name>
+        <t>
+          draft-giron-acme-pqcnegotiation-03 (expired 2024-08-19, no WG adoption)
+          defines a /cert-algorithms discovery endpoint and KEMTLS issuance modes.
+          It does not define: per-order policy objects; a hybrid_required enforcement
+          bit; rotation epoch binding; composite chain policy identifiers; PQC posture
+          scoring; or multi-tenant isolation requirements. This document addresses
+          those gaps and is not a competing mechanism.
+        </t>
+      </section>
+
+      <section anchor="acme-profiles-relationship">
+        <name>Relationship to draft-ietf-acme-profiles</name>
+        <t>
+          The ACME Profiles Extension [I-D.ietf-acme-profiles] defines a generic
+          mechanism for servers to advertise named certificate profiles and for clients
+          to select a profile via an opaque string. It does not define PQC-semantic
+          content. This document defines that content. Servers MAY expose PQC agility
+          profiles named per [I-D.ietf-acme-profiles] whose enforcement is defined here.
+          The pqcAgility object MAY appear alongside the profile field from
+          [I-D.ietf-acme-profiles] in an order object.
+        </t>
+      </section>
+
+      <section anchor="lamps-pquip-relationship">
+        <name>Relationship to LAMPS and PQUIP Work</name>
+        <t>
+          The hybrid_required bit and composite_chain_policy identifiers are designed
+          to interoperate with [I-D.ietf-lamps-pq-composite-sigs] and
+          [I-D.ietf-pquip-hybrid-signature-spectrums]. This document defines how an
+          ACME server enforces and advertises selection of those formats via the
+          order lifecycle.
+        </t>
+      </section>
+    </section>
+
+    <section anchor="security-considerations">
+      <name>Security Considerations</name>
+      <t>
+        This document builds upon the security model of RFC 8555. The extensions
+        do not modify account management or identifier validation flows.
+        PQC posture metadata (pqc_posture_score) is sensitive. Servers SHOULD
+        avoid exposing aggregated tenant PQC posture without authorization.
+        The rotation_epoch_id field MUST NOT be used to correlate accounts across
+        tenants. Servers SHOULD treat client-supplied posture scores as advisory only.
+        The hybrid_required enforcement bit creates a migration dependency; server
+        operators SHOULD announce hybrid-required profiles with sufficient lead time
+        via rotation_epoch_id.
+      </t>
+    </section>
+
+    <section anchor="iana-considerations">
+      <name>IANA Considerations</name>
+      <t>
+        IANA is requested to create a new registry group,
+        "Automated Certificate Management Environment (ACME) PQC Agility Profile",
+        containing:
+      </t>
+      <ul>
+        <li>"ACME PQC Agility Algorithm Identifiers" (Specification Required)</li>
+        <li>"ACME PQC Composite Chain Policy Identifiers" (Expert Review)</li>
+        <li>"ACME PQC Agility Error Types": initial entry unsupportedPQCAlgorithm (Specification Required)</li>
+      </ul>
+      <t>
+        IANA is also requested to add pqcAgility (object) to the
+        "ACME Directory Metadata Fields" registry and to the
+        "ACME Order Object Fields" registry (Configurable: true).
+        Reference: this document.
+      </t>
+    </section>
+
+  </middle>
+
+  <back>
+    <references>
+      <name>References</name>
+
+      <references>
+        <name>Normative References</name>
+        <reference anchor="RFC2119" target="https://www.rfc-editor.org/info/rfc2119">
+          <front>
+            <title>Key words for use in RFCs to Indicate Requirement Levels</title>
+            <author initials="S." surname="Bradner" fullname="S. Bradner"/>
+            <date year="1997" month="March"/>
+          </front>
+        </reference>
+        <reference anchor="RFC8174" target="https://www.rfc-editor.org/info/rfc8174">
+          <front>
+            <title>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</title>
+            <author initials="B." surname="Leiba" fullname="B. Leiba"/>
+            <date year="2017" month="May"/>
+          </front>
+        </reference>
+        <reference anchor="RFC8555" target="https://www.rfc-editor.org/info/rfc8555">
+          <front>
+            <title>Automatic Certificate Management Environment (ACME)</title>
+            <author initials="R." surname="Barnes" fullname="R. Barnes"/>
+            <author initials="J." surname="Hoffman-Andrews" fullname="J. Hoffman-Andrews"/>
+            <author initials="D." surname="McCarney" fullname="D. McCarney"/>
+            <author initials="J." surname="Kasten" fullname="J. Kasten"/>
+            <date year="2019" month="March"/>
+          </front>
+        </reference>
+      </references>
+
+      <references>
+        <name>Informative References</name>
+        <reference anchor="I-D.ietf-acme-profiles"
+                   target="https://datatracker.ietf.org/doc/draft-ietf-acme-profiles/">
+          <front>
+            <title>Automated Certificate Management Environment (ACME) Profiles Extension</title>
+            <author initials="A." surname="Gable" fullname="Aaron Gable"/>
+            <date year="2026" month="March"/>
+          </front>
+        </reference>
+        <reference anchor="I-D.ietf-lamps-pq-composite-sigs"
+                   target="https://datatracker.ietf.org/doc/draft-ietf-lamps-pq-composite-sigs/">
+          <front>
+            <title>Composite ML-DSA for use in Internet PKI</title>
+            <author initials="M." surname="Ounsworth" fullname="Mike Ounsworth"/>
+            <date year="2025"/>
+          </front>
+        </reference>
+        <reference anchor="I-D.ietf-pquip-hybrid-signature-spectrums"
+                   target="https://datatracker.ietf.org/doc/draft-ietf-pquip-hybrid-signature-spectrums/">
+          <front>
+            <title>Hybrid signature spectrums</title>
+            <author initials="D." surname="Connolly" fullname="Deirdre Connolly"/>
+            <date year="2025"/>
+          </front>
+        </reference>
+        <reference anchor="I-D.giron-acme-pqcnegotiation"
+                   target="https://datatracker.ietf.org/doc/draft-giron-acme-pqcnegotiation/">
+          <front>
+            <title>ACME PQC Algorithm Negotiation (expired)</title>
+            <author initials="A.A." surname="Giron" fullname="Alexandre Augusto Giron"/>
+            <date year="2024" month="February"/>
+          </front>
+        </reference>
+        <reference anchor="NIST-FIPS-204"
+                   target="https://doi.org/10.6028/NIST.FIPS.204">
+          <front>
+            <title>Module-Lattice-Based Digital Signature Standard (FIPS 204)</title>
+            <author><organization>NIST</organization></author>
+            <date year="2024" month="August"/>
+          </front>
+        </reference>
+        <reference anchor="NIST-IR-8547"
+                   target="https://doi.org/10.6028/NIST.IR.8547.ipd">
+          <front>
+            <title>Transition to Post-Quantum Cryptography Standards (NIST IR 8547)</title>
+            <author><organization>NIST</organization></author>
+            <date year="2024" month="November"/>
+          </front>
+        </reference>
+      </references>
+    </references>
+  </back>
+
+</rfc>
