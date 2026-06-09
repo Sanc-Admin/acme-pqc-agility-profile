@@ -1,0 +1,84 @@
+name: Prior Art Monitor
+
+on:
+  schedule:
+    - cron: '22 4,10,16,22 * * *'
+  workflow_dispatch:
+
+jobs:
+  datatracker-sweep:
+    name: IETF Datatracker prior-art sweep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Sweep IETF Datatracker
+        id: sweep
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          python3 - <<'EOF'
+          import requests, os, sys
+
+          THREAT_MAP = {
+              "acme-pqc-agility-profile": ["acme-pqcnegotiation","acme-pqc","acme-agility"],
+              "lamps-pqchc": ["x509-pq-commit","pq-composite-sigs","cert-binding-for-multi-auth","rotation-envelope"],
+              "oauth-apm": ["attestation-based-client-auth","oauth-posture","caep","step-up"],
+              "pquip-multitenant-pki-requirements": ["pqc-migration","multitenant-pki","pquip"],
+              "pquip-pqc-readiness-gaps": ["pqc-migration","pqc-readiness","pquip-pqc"],
+          }
+
+          repo = os.environ.get("REPO_NAME","unknown")
+          terms = THREAT_MAP.get(repo,[])
+          threats_found = []
+
+          for term in terms:
+              try:
+                  r = requests.get(
+                      f"https://datatracker.ietf.org/api/v1/doc/document/?name__contains={term}&format=json",
+                      timeout=15
+                  )
+                  if r.ok:
+                      for obj in r.json().get("objects",[]):
+                          name = obj["name"]
+                          rev = obj.get("rev","?")
+                          updated = obj.get("time","")[:10]
+                          if "draft-" in name and "vicente" not in name:
+                              threats_found.append(f"{name} (rev -{rev}, updated {updated})")
+              except Exception as e:
+                  print(f"WARN: sweep failed for term '{term}': {e}")
+
+          gho = os.environ.get("GITHUB_OUTPUT","")
+          if threats_found:
+              print(f"Threats detected for {repo}:")
+              for t in threats_found:
+                  print(f"  - {t}")
+              if gho:
+                  open(gho,"a").write("threats_found=true\n")
+          else:
+              print(f"No new threats detected for {repo}")
+              if gho:
+                  open(gho,"a").write("threats_found=false\n")
+          EOF
+
+      - name: Open issue on threat detection
+        if: steps.sweep.outputs.threats_found == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[PRIOR-ART] Threat detected in ${context.repo.repo} — ${new Date().toISOString().slice(0,10)}`,
+              body: `Automated Datatracker sweep detected competing drafts.\n\nWorkflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n**Action:** Review threats and apply prior-art protocol.`,
+              labels: ['prior-art','intel','action-required']
+            });

@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you reference this work, please cite it as below."
+authors:
+  - family-names: Vicente
+    given-names: Brian
+    orcid: https://orcid.org/0009-0006-6395-5308
+    affiliation: Sanctum SecOps LLC
+title: "ACME PQC Agility Profile"
+version: "00"
+date-released: "2026-06-08"
+url: "https://github.com/Sanc-Admin/acme-pqc-agility-profile"
+license: CC-BY-4.0
+keywords:
+  - IETF
+  - ACME
+  - post-quantum cryptography
+  - certificate agility
+  - sanctum-secops
+  - patent-pending
