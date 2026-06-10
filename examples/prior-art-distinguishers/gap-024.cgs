@@ -1,0 +1,30 @@
+// GAP-024 — HashiCorp Vault Enterprise 1.19 ML-DSA + auto-rotation
+// CyGnScrypt (.cgs) sample distinguishing CGS from prior art
+// Date: 2026-06-10
+// License: Sanctum SecOps LLC — patent-pending, all rights reserved
+
+policy "gap-024_distinguisher" {
+  version = "1.0.0"
+  mechanism = [MECH-D]
+  established = "2026-06-10"
+
+  input cbom {
+    source = "cyclonedx:^1.5"
+    field "components[].cryptoProperties.algorithmProperties.primitive"
+  }
+
+  emit ipfix template 0xCGS01 {
+    field policy_id    type unsigned32
+    field decision     type unsigned8
+    field pqc_level    type unsigned8
+    field tier         type unsigned8
+  }
+
+  when tls.named_group in [x25519_mlkem768, x448_mlkem1024] {
+    require cert.extension(oid:"1.3.6.1.4.1.99999.42.1").tier <= T2
+    emit ipfix 0xCGS01 { decision=1, pqc_level=3, tier=cert.tier }
+    allow
+  }
+
+  deny "no PQC hybrid named group negotiated"
+}
