@@ -1,0 +1,61 @@
+{
+  "repo": "acme-pqc-agility-profile",
+  "subject": "Post-Quantum Cryptographic Agility Profile for ACME: pqcAgility directory metadata, per-order posture, server-side adequacy scoring, rotation epoch anchoring and tenant isolation above the negotiation layer.",
+  "exclude_name_contains": [
+    "-vicente-"
+  ],
+  "queries": [
+    {
+      "label": "name contains 'acme-pqcnegotiation'",
+      "filters": {
+        "name__contains": "acme-pqcnegotiation"
+      }
+    },
+    {
+      "label": "name contains 'acme-pqc'",
+      "filters": {
+        "name__contains": "acme-pqc"
+      }
+    },
+    {
+      "label": "name contains 'acme-profiles'",
+      "filters": {
+        "name__contains": "acme-profiles"
+      }
+    },
+    {
+      "label": "name contains 'acme-profile-sets'",
+      "filters": {
+        "name__contains": "acme-profile-sets"
+      }
+    },
+    {
+      "label": "ACME WG drafts whose title mentions post-quantum",
+      "filters": {
+        "group__acronym": "acme",
+        "title__icontains": "post-quantum"
+      }
+    },
+    {
+      "label": "ACME WG drafts whose title mentions profile",
+      "filters": {
+        "group__acronym": "acme",
+        "title__icontains": "profile"
+      },
+      "require_title_any": [
+        "post-quantum",
+        "pqc",
+        "quantum",
+        "agility",
+        "profiles extension",
+        "profile sets"
+      ]
+    },
+    {
+      "label": "title contains 'cryptographic agility'",
+      "filters": {
+        "title__icontains": "cryptographic agility"
+      }
+    }
+  ]
+}

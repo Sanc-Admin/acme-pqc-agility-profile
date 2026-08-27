@@ -1,0 +1,48 @@
+{
+  "seen": {
+    "draft-aaron-acme-profiles": {
+      "rev": "01",
+      "title": "Automated Certificate Management Environment (ACME) Profiles Extension",
+      "wg": "acme",
+      "first_seen": "2026-08-27T19:56:09Z",
+      "last_seen_rev_at": "2026-08-27T19:56:09Z"
+    },
+    "draft-ar-acme-pqc-tlsjws": {
+      "rev": "00",
+      "title": "Quantum-Ready Profiles for ACME",
+      "wg": "none",
+      "first_seen": "2026-08-27T19:56:09Z",
+      "last_seen_rev_at": "2026-08-27T19:56:09Z"
+    },
+    "draft-davidben-acme-profile-sets": {
+      "rev": "00",
+      "title": "Automated Certificate Management Environment (ACME) Profile Sets",
+      "wg": "acme",
+      "first_seen": "2026-08-27T19:56:09Z",
+      "last_seen_rev_at": "2026-08-27T19:56:09Z"
+    },
+    "draft-giron-acme-pqcnegotiation": {
+      "rev": "03",
+      "title": "ACME PQC Algorithm Negotiation",
+      "wg": "none",
+      "first_seen": "2026-08-27T19:56:09Z",
+      "last_seen_rev_at": "2026-08-27T19:56:09Z"
+    },
+    "draft-ietf-acme-profiles": {
+      "rev": "01",
+      "title": "Automated Certificate Management Environment (ACME) Profiles Extension",
+      "wg": "acme",
+      "first_seen": "2026-08-27T19:56:09Z",
+      "last_seen_rev_at": "2026-08-27T19:56:09Z"
+    },
+    "draft-turner-rsvp-auth-update": {
+      "rev": "01",
+      "title": "Cryptographic Agility for the RSVP INTEGRITY Object",
+      "wg": "none",
+      "first_seen": "2026-08-27T19:56:09Z",
+      "last_seen_rev_at": "2026-08-27T19:56:09Z"
+    }
+  },
+  "updated": "2026-08-27T19:56:09Z",
+  "queries_source": ".github/prior-art-queries.json"
+}
