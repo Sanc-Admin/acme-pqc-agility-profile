@@ -281,31 +281,7 @@
       <name>References</name>
       <references>
         <name>Normative References</name>
-        <reference anchor="RFC2119" target="https://www.rfc-editor.org/info/rfc2119">
-          <front>
-            <title>Key words for use in RFCs to Indicate Requirement Levels</title>
-            <author initials="S." surname="Bradner" fullname="S. Bradner"/>
-            <date year="1997" month="March"/>
-          </front>
-        </reference>
-        <reference anchor="RFC8174" target="https://www.rfc-editor.org/info/rfc8174">
-          <front>
-            <title>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</title>
-            <author initials="B." surname="Leiba" fullname="B. Leiba"/>
-            <date year="2017" month="May"/>
-          </front>
-        </reference>
-        <reference anchor="RFC8555" target="https://www.rfc-editor.org/info/rfc8555">
-          <front>
-            <title>Automatic Certificate Management Environment (ACME)</title>
-            <author initials="R." surname="Barnes" fullname="R. Barnes"/>
-            <author initials="J." surname="Hoffman-Andrews" fullname="J. Hoffman-Andrews"/>
-            <author initials="D." surname="McCarney" fullname="D. McCarney"/>
-            <author initials="J." surname="Kasten" fullname="J. Kasten"/>
-            <date year="2019" month="March"/>
-          </front>
-        </reference>
-      </references>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/><xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/><xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8555.xml"/></references>
       <references>
         <name>Informative References</name>
         <reference anchor="FIPS203" target="https://doi.org/10.6028/NIST.FIPS.203">

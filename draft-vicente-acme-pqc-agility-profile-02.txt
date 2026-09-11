@@ -358,16 +358,17 @@ Internet-Draft          ACME PQC Agility Profile               July 2026
 10.1.  Normative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
-              Requirement Levels", March 1997,
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/info/rfc2119>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
-              2119 Key Words", May 2017,
-              <https://www.rfc-editor.org/info/rfc8174>.
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/info/rfc8174>.
 
    [RFC8555]  Barnes, R., Hoffman-Andrews, J., McCarney, D., and J.
               Kasten, "Automatic Certificate Management Environment
-              (ACME)", March 2019,
+              (ACME)", RFC 8555, DOI 10.17487/RFC8555, March 2019,
               <https://www.rfc-editor.org/info/rfc8555>.
 
 10.2.  Informative References
@@ -384,7 +385,6 @@ Internet-Draft          ACME PQC Agility Profile               July 2026
    [FIPS205]  National Institute of Standards and Technology, "Stateless
               Hash-Based Digital Signature Standard (SLH-DSA)", August
               2024, <https://doi.org/10.6028/NIST.FIPS.205>.
-
 
 
 
