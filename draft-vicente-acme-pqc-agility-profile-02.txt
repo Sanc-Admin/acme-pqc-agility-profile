@@ -1,0 +1,504 @@
+
+
+
+
+Automated Certificate Management Environment                  B. Vicente
+Internet-Draft                                        Sanctum SecOps LLC
+Intended status: Informational                              19 July 2026
+Expires: 20 January 2027
+
+
+          Post-Quantum Cryptographic Agility Profile for ACME
+               draft-vicente-acme-pqc-agility-profile-02
+
+Abstract
+
+   This document defines an Automated Certificate Management Environment
+   (ACME) [RFC8555] profile extension that enables ACME servers and
+   clients to express per-account and per-order post-quantum
+   cryptographic (PQC) posture.  The extension introduces a pqcAgility
+   metadata object in the ACME directory, an optional pqcAgility member
+   in order objects, and a server-side adequacy scoring mechanism that
+   determines whether a given order satisfies an account's declared PQC
+   readiness threshold.
+
+   The profile is designed for both public and private ACME deployments
+   and does not modify the core ACME state machine: it adds discoverable
+   capability metadata and per-order policy directives that servers MAY
+   enforce.  Multi-tenant ACME servers MUST implement tenant-isolation
+   controls that prevent cross-account PQC posture leakage.
+
+   This document is distinguished from draft-giron-acme-pqcnegotiation
+   [I-D.giron-acme-pqcnegotiation], which defines algorithm negotiation
+   at the ACME protocol level.  This profile operates above the
+   negotiation layer: it defines per-account posture scoring, adequacy
+   thresholds, hybrid policy bits, rotation epoch anchoring, and tenant-
+   isolation requirements that apply regardless of which negotiation
+   mechanism is used.
+
+Source and Archival
+
+   This note is to be removed before publishing as an RFC.
+
+   Source for this draft is maintained at https://github.com/Sanc-Admin/
+   acme-pqc-agility-profile (https://github.com/Sanc-Admin/acme-pqc-
+   agility-profile).  A citable archival version is published at Zenodo
+   upon each tagged release.  Author ORCID:
+   https://orcid.org/0009-0006-6395-5308
+   (https://orcid.org/0009-0006-6395-5308).
+
+   Discussion of this document should occur on the ACME working group
+   mailing list (acme@ietf.org).
+
+
+
+
+Vicente                  Expires 20 January 2027                [Page 1]
+
+Internet-Draft          ACME PQC Agility Profile               July 2026
+
+
+IPR Considerations
+
+   This note is to be removed before publishing as an RFC.
+
+   The author has filed United States patent applications covering
+   subject matter relevant to this document, including pending patent
+   applications (filed 2026-06-05).  By posting this Internet-Draft, the
+   author submits to the IETF Trust the rights described in Section 5 of
+   BCP 78 and BCP 79.  Patent licensing terms are not yet known.
+   Implementers and reviewers should consult the IETF Datatracker IPR
+   disclosure page for this document for current disclosure status.  The
+   Sanctum SecOps Private Enterprise Number (PEN) root used for any OID
+   allocations referenced in companion documents is 1.3.6.1.4.1.65953.
+
+   The scope of the pending patent applications includes, but is not
+   limited to, the per-account PQC posture scoring, adequacy threshold
+   gating, tenant-isolation orchestration, and rotation epoch anchoring
+   mechanisms described in this document.  This Internet-Draft itself
+   does not grant any patent license.  Implementation parameters that
+   would extend beyond the disclosed interface (including but not
+   limited to scoring weights, rotation triggers, tenant carve-out
+   parameters, and adequacy thresholds) are intentionally out of scope
+   and are not disclosed in this Internet-Draft.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at https://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on 20 January 2027.
+
+Copyright Notice
+
+   Copyright (c) 2026 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+
+
+
+
+
+Vicente                  Expires 20 January 2027                [Page 2]
+
+Internet-Draft          ACME PQC Agility Profile               July 2026
+
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents (https://trustee.ietf.org/
+   license-info) in effect on the date of publication of this document.
+   Please review these documents carefully, as they describe your rights
+   and restrictions with respect to this document.  Code Components
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+   2.  Terminology . . . . . . . . . . . . . . . . . . . . . . . . .   4
+   3.  ACME Directory Metadata . . . . . . . . . . . . . . . . . . .   4
+   4.  Order Object Extensions . . . . . . . . . . . . . . . . . . .   4
+   5.  PQC Adequacy Scoring  . . . . . . . . . . . . . . . . . . . .   5
+   6.  Tenant Isolation  . . . . . . . . . . . . . . . . . . . . . .   5
+   7.  Related Work  . . . . . . . . . . . . . . . . . . . . . . . .   6
+   8.  Security Considerations . . . . . . . . . . . . . . . . . . .   6
+   9.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   7
+   10. References  . . . . . . . . . . . . . . . . . . . . . . . . .   7
+     10.1.  Normative References . . . . . . . . . . . . . . . . . .   7
+     10.2.  Informative References . . . . . . . . . . . . . . . . .   7
+   Changelog . . . . . . . . . . . . . . . . . . . . . . . . . . . .   8
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   9
+
+1.  Introduction
+
+   ACME [RFC8555] is the dominant protocol for automated certificate
+   issuance.  As certificate deployments migrate to post-quantum
+   cryptography (PQC) — driven by NIST FIPS 203 [FIPS203], FIPS 204
+   [FIPS204], and FIPS 205 [FIPS205] — ACME implementations require a
+   uniform mechanism to express per-account PQC posture and enforce per-
+   order PQC policy.
+
+   This document defines that mechanism.  It is intentionally scoped to
+   the policy and posture layer, above the algorithm negotiation layer
+   addressed by draft-giron-acme-pqcnegotiation [I-D.giron-acme-
+   pqcnegotiation].  The two documents are complementary: algorithm
+   negotiation determines which PQC algorithms a server supports; this
+   profile determines whether a given order satisfies an account's
+   declared PQC readiness requirements and how multi-tenant isolation is
+   maintained.
+
+
+
+
+
+
+
+
+Vicente                  Expires 20 January 2027                [Page 3]
+
+Internet-Draft          ACME PQC Agility Profile               July 2026
+
+
+2.  Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in BCP
+   14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals.
+
+   PQC Agility Profile  The set of pqcAgility metadata, per-account
+      posture fields, and per-order policy directives defined in this
+      document.
+
+   Adequacy Score  A server-computed numeric measure of how well a given
+      order's algorithm set satisfies an account's declared PQC
+      readiness threshold.  Scoring weights are deployment-specific and
+      not disclosed in this document.
+
+   Hybrid Required  A per-order policy bit indicating that the issued
+      certificate MUST include both a classical and a PQC algorithm
+      (composite or dual-key).
+
+   Rotation Epoch ID  An opaque server-issued identifier anchoring a
+      certificate issuance to a specific key-rotation window, enabling
+      coordinated enterprise-wide migration.
+
+3.  ACME Directory Metadata
+
+   An ACME server supporting this profile MUST include a pqcAgility
+   object in its directory metadata response [RFC8555] Section 7.1.1.
+   The object has the following fields:
+
+   supportedPQCAlgorithms  Array of OID strings identifying PQC
+      algorithms the server supports for certificate issuance.
+
+   hybridModes  Array of strings identifying supported hybrid algorithm
+      combinations (e.g., "ML-DSA-65+ECDSA-P256").
+
+   compositeChainPolicies  Array of identifiers for supported composite
+      chain policies.
+
+   pqcAdequacyThresholdDefault  The default adequacy score threshold
+      below which orders are rejected.  MAY be overridden per account.
+
+4.  Order Object Extensions
+
+   An ACME client MAY include a pqcAgility member in an order object
+   submitted via POST to the newOrder endpoint [RFC8555] Section 7.4.
+   The member carries the following fields:
+
+
+
+Vicente                  Expires 20 January 2027                [Page 4]
+
+Internet-Draft          ACME PQC Agility Profile               July 2026
+
+
+   pqcAlgorithmPreferences  Ordered array of OID strings expressing the
+      client's algorithm preference.  The server MUST honor the
+      preferences to the extent compatible with its policy.
+
+   hybridRequired  Boolean.  When true, the server MUST issue a hybrid
+      certificate (composite or dual-key).  The server MUST reject the
+      order with a pqcPolicyViolation error if hybrid issuance is not
+      possible.
+
+   rotationEpochId  Opaque string.  When provided, the server associates
+      this order with the specified rotation epoch.  Servers that do not
+      support epoch anchoring MAY ignore this field.
+
+   compositeChainPolicy  Identifier string selecting a specific
+      composite chain policy from the server's directory metadata.
+
+   The server MUST honor or reject the pqcAgility directive based on its
+   configured policy.  A rejection MUST return an ACME error of type
+   "urn:ietf:params:acme:error:pqcPolicyViolation".
+
+5.  PQC Adequacy Scoring
+
+   Servers implementing this profile MAY compute a per-order adequacy
+   score based on the requested algorithm set, hybrid posture, and the
+   account's declared readiness threshold.  The scoring algorithm is
+   deployment-specific and is not specified in this document; concrete
+   scoring parameters are intentionally out of scope to preserve
+   implementation flexibility and to avoid constraining patent-pending
+   orchestration mechanisms.
+
+   Servers MUST NOT expose raw adequacy scores to clients in a way that
+   reveals other accounts' posture information.
+
+6.  Tenant Isolation
+
+   Multi-tenant ACME servers MUST ensure that pqcAgility directives from
+   one account do not influence issuance decisions for other accounts.
+   Specifically:
+
+   *  Per-account pqcAgility configuration MUST be stored and evaluated
+      in an account-scoped data structure.
+
+   *  Adequacy scores and readiness thresholds MUST NOT be shared across
+      account boundaries.
+
+   *  Rotation epoch IDs MUST be validated against the requesting
+      account's authorized epoch set.
+
+
+
+
+Vicente                  Expires 20 January 2027                [Page 5]
+
+Internet-Draft          ACME PQC Agility Profile               July 2026
+
+
+   Concrete tenant-isolation implementation parameters are deployment-
+   specific and are not disclosed in this document.
+
+7.  Related Work
+
+   draft-giron-acme-pqcnegotiation [I-D.giron-acme-pqcnegotiation]
+   defines algorithm negotiation at the ACME protocol level: it
+   introduces PQC algorithm fields in account and order objects to allow
+   clients and servers to negotiate which PQC algorithms are used.  This
+   document is complementary: it operates above the negotiation layer
+   and defines per-account posture scoring, hybrid policy enforcement,
+   rotation epoch anchoring, and tenant-isolation requirements.  An ACME
+   server MAY implement both documents simultaneously; the negotiation
+   mechanism of draft-giron-acme-pqcnegotiation determines algorithm
+   selection, while this profile determines whether the resulting
+   algorithm set satisfies the account's PQC readiness threshold.
+
+   NIST FIPS 203 [FIPS203], FIPS 204 [FIPS204], and FIPS 205 [FIPS205]
+   define the ML-KEM, ML-DSA, and SLH-DSA post-quantum algorithms,
+   respectively.  Algorithm OIDs referenced in this profile correspond
+   to these standards.
+
+   draft-ietf-lamps-pq-composite-sigs [I-D.ietf-lamps-pq-composite-sigs]
+   defines composite signature algorithms combining a PQC algorithm with
+   a classical algorithm.  The composite chain policies referenced in
+   this document support such algorithms.
+
+8.  Security Considerations
+
+   PQC posture metadata is security-sensitive.  ACME servers SHOULD
+   treat per-account pqcAgility configuration with the same access
+   controls as account key material.  Servers MUST NOT expose aggregated
+   tenant PQC posture information through any unauthenticated endpoint.
+
+   Clients SHOULD validate hybrid certificate chains end-to-end,
+   verifying both the classical and PQC signature paths independently.
+
+   Harvest-now-decrypt-later (HNDL) attacks motivate the urgency of
+   hybrid deployment.  The hybridRequired field provides a mechanism for
+   accounts that require protection against HNDL during the migration
+   period.
+
+   Rotation epoch IDs SHOULD be cryptographically bound to the issuing
+   server's current state to prevent replay of stale epoch identifiers.
+
+
+
+
+
+
+
+Vicente                  Expires 20 January 2027                [Page 6]
+
+Internet-Draft          ACME PQC Agility Profile               July 2026
+
+
+9.  IANA Considerations
+
+   IANA is requested to register the following ACME error type:
+
+   *  Type: "urn:ietf:params:acme:error:pqcPolicyViolation"
+
+   *  Description: The order was rejected because it does not satisfy
+      the account's PQC agility profile policy.
+
+   *  Reference: This document.
+
+   IANA is also requested to create an "ACME PQC Agility" registry for
+   composite chain policy identifiers, with a registration policy of
+   Specification Required.
+
+10.  References
+
+10.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", March 1997,
+              <https://www.rfc-editor.org/info/rfc2119>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", May 2017,
+              <https://www.rfc-editor.org/info/rfc8174>.
+
+   [RFC8555]  Barnes, R., Hoffman-Andrews, J., McCarney, D., and J.
+              Kasten, "Automatic Certificate Management Environment
+              (ACME)", March 2019,
+              <https://www.rfc-editor.org/info/rfc8555>.
+
+10.2.  Informative References
+
+   [FIPS203]  National Institute of Standards and Technology, "Module-
+              Lattice-Based Key-Encapsulation Mechanism Standard (ML-
+              KEM)", August 2024,
+              <https://doi.org/10.6028/NIST.FIPS.203>.
+
+   [FIPS204]  National Institute of Standards and Technology, "Module-
+              Lattice-Based Digital Signature Standard (ML-DSA)", August
+              2024, <https://doi.org/10.6028/NIST.FIPS.204>.
+
+   [FIPS205]  National Institute of Standards and Technology, "Stateless
+              Hash-Based Digital Signature Standard (SLH-DSA)", August
+              2024, <https://doi.org/10.6028/NIST.FIPS.205>.
+
+
+
+
+
+Vicente                  Expires 20 January 2027                [Page 7]
+
+Internet-Draft          ACME PQC Agility Profile               July 2026
+
+
+   [I-D.giron-acme-pqcnegotiation]
+              Giron, A.G. and J. Arnaut, "Algorithm Negotiation in ACME
+              for Post-Quantum Cryptography", Work in Progress,
+              Internet-Draft, draft-giron-acme-pqcnegotiation-03, August
+              2024, <https://datatracker.ietf.org/doc/html/draft-giron-
+              acme-pqcnegotiation-03>.
+
+   [I-D.ietf-lamps-pq-composite-sigs]
+              Gray, J. and M. Pala, "Composite ML-DSA for use in
+              Internet PKI", Work in Progress, Internet-Draft, draft-
+              ietf-lamps-pq-composite-sigs, June 2026,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-lamps-
+              pq-composite-sigs>.
+
+Changelog
+
+   -01 (2026-06-23)
+      *  Added Related Work section explicitly differentiating this
+         document from draft-giron-acme-pqcnegotiation-03.  The giron
+         draft addresses algorithm negotiation at the ACME protocol
+         level; this profile addresses posture scoring, adequacy
+         thresholds, hybrid policy enforcement, rotation epoch
+         anchoring, and tenant isolation.
+
+      *  Added giron draft to informative references with proper
+         citation.
+
+      *  Expanded abstract to include differentiation statement.
+
+      *  Added FIPS 203/204/205 normative references.
+
+      *  Added composite-sigs informative reference.
+
+      *  Expanded Tenant Isolation section with concrete MUST
+         requirements.
+
+      *  Added adequacy scoring section clarifying that scoring weights
+         are deployment-specific (patent-pending).
+
+      *  Added HNDL threat context to Security Considerations.
+
+      *  Updated postal address to Pine City NY 14871.
+
+      *  Bumped docName to -01.
+
+   -00 (2026-06-08)  Initial submission.
+
+
+
+
+
+Vicente                  Expires 20 January 2027                [Page 8]
+
+Internet-Draft          ACME PQC Agility Profile               July 2026
+
+
+Author's Address
+
+   Brian Vicente
+   Sanctum SecOps LLC
+   128 Dry Run Rd
+   Pine City, NY 14871
+   United States of America
+   Email: bvicente@sanctumsecops.com
+   URI:   https://orcid.org/0009-0006-6395-5308
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Vicente                  Expires 20 January 2027                [Page 9]
